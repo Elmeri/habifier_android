@@ -1,0 +1,24 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.elmeripoikolainen.habifier.GraphActivity" >
+    <item
+        android:title="test"
+        android:icon="@drawable/ic_action_overflow"
+        android:showAsAction="ifRoom">
+        <menu>
+            <item
+                android:id="@+id/menuToday"
+                android:title="Today" />
+            <item
+                android:id="@+id/menuYesterday"
+                android:title="Yesterday" />
+            <item
+                android:id="@+id/menuSpecifyADay"
+                android:title="Specify a day"/>
+        </menu>
+    </item>
+    <item android:id="@+id/action_settings"
+        android:title="@string/action_settings"
+        android:orderInCategory="100"
+        android:showAsAction="never" />
+</menu>

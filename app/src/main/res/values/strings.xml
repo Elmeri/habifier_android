@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Habifier</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="work_button">Work</string>
+    <string name="study_button">Study</string>
+    <string name="sleep_button">Sleep</string>
+    <string name="leisure_button">Leisure</string>
+    <string name="eating_button">Eat</string>
+    <string name="chronometer1">chronometer1</string>
+    <string name="chronometer2">chronometer2</string>
+    <string name="chronometer3">chronometer2</string>
+    <string name="button_1">0button</string>
+    <string name="button_2">1button</string>
+    <string name="button_3">2button</string>
+    <string name="button_4">3button</string>
+    <string name="title_activity_graph_acticity">GraphActicity</string>
+    <string name="title_section1">Section 1</string>
+    <string name="title_section2">Section 2</string>
+    <string name="title_section3">Section 3</string>
+    <string name="title_activity_graph">GraphActivity</string>
+    <string name="action_search">Search</string>
+    <string-array name="days_array">
+        <item>Today</item>
+        <item>Yesterday</item>
+        <item>Choose a day</item>
+    </string-array>
+
+</resources>
