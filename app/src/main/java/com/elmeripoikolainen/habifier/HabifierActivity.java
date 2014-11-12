@@ -8,19 +8,12 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
-import android.R.string;
 import android.os.Build;
-import android.os.Bundle;
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.LightingColorFilter;
-import android.graphics.PorterDuff;
-import android.view.Menu;
 import android.view.View;
 import android.os.SystemClock;
-import android.view.View.OnClickListener;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.Button;
 import android.widget.Chronometer;
@@ -29,18 +22,18 @@ import android.widget.ImageButton;
 import com.echo.holographlibrary.PieGraph;
 import com.echo.holographlibrary.PieSlice;
 
-import org.w3c.dom.Comment;
-import android.app.ListActivity;
-import android.os.Bundle;
-import android.view.View;
-import android.widget.ArrayAdapter;
-
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 
 public class HabifierActivity extends Activity {
 
-    public final static String EXTRA_MESSAGE = "com.elmeripoikolainen.habifier.MESSAGE";
+    public final static String CHRONOMETERARRAY_MESSAGE = "com.elmeripoikolainen.habifier.CHRONOMETERARRAY_MESSAGE";
+    public final static String CHRONOMETERNAME_MESSAGE = "com.elmeripoikolainen.habifier.CHRONOMETERNAME_MESSAGE";
 
     private Chronometer chronometer1;
     private long chronometer1_time;
@@ -54,7 +47,10 @@ public class HabifierActivity extends Activity {
     private Chronometer[] chronometerArray;
     private long[] chronometerTimeArray;
     private String[] chronometerNameArray = {"Work", "Study", "Leisure", "Eat"};
+    private List<Hactivity> hactivitiesArray = new ArrayList<Hactivity>();
     private ImageButton[] buttonArray;
+
+    private int chronometerLength = 4;
 
     private HactivityDataSource datasource;
 
@@ -80,16 +76,18 @@ public class HabifierActivity extends Activity {
         chronometerArray = new Chronometer[4];
         chronometerTimeArray = new long[4];
         chronometer1 = ((Chronometer) findViewById(R.id.chronometer1));
-        chronometerTimeArray[0]  = 0;
-        chronometerTimeArray[1]  = 0;
-        chronometerTimeArray[2]  = 0;
-        chronometerTimeArray[3]  = 0;
+        for (int i = 0; i < chronometerLength; i++){
+            chronometerTimeArray[i] = 0;
+        }
+
         lastChronometerIndex = -1;
         buttonArray = new ImageButton[3];
         button_1 = ((Button) findViewById(R.id.button_1));
         button_2 = ((Button) findViewById(R.id.button_2));
         button_3 = ((Button) findViewById(R.id.button_3));
         button_4 = ((Button) findViewById(R.id.button_4));
+
+        Date dateNow = new Date();
 
         datasource = new HactivityDataSource(this);
         //datasource.reset();
@@ -99,10 +97,14 @@ public class HabifierActivity extends Activity {
 
         //TODO when this is fixed, the back button should work as intented
         //TODO Before creating, check if they exist in the database !!!!!!!!!!!!!!!!!!!!!
-        datasource.createHactivity(chronometerNameArray[0]);
-        datasource.createHactivity(chronometerNameArray[1]);
-        datasource.createHactivity(chronometerNameArray[2]);
-        datasource.createHactivity(chronometerNameArray[3]);
+        for (int i = 0; i < chronometerLength; i++){
+            Log.d("Datasource is creating things", "index");
+            hactivitiesArray.add(datasource.createHactivity(chronometerNameArray[i]));
+        }
+        for (int i = 0; i < chronometerLength; i++){
+            Log.d("Datasource is creating things", "index");
+            datasource.createHactivityDayBefore(chronometerNameArray[i]);
+        }
 
         //Chart
         pieGraph = (PieGraph)findViewById(R.id.graph);
@@ -138,6 +140,9 @@ public class HabifierActivity extends Activity {
         //Periodical task
         mHandler = new Handler();
         //startRepeatingTask();
+
+        debugLogHactivities();
+        Arrays.asList(chronometerArray).indexOf("test");
 
     }
 
@@ -205,8 +210,14 @@ public class HabifierActivity extends Activity {
         if(!isChronometerRunning){
             resumeChronometerAction();
         }
+        datasource.updateHactivity(chronometerNameArray[lastChronometerIndex], chronometerTimeArray[lastChronometerIndex], (int) hactivitiesArray.get(lastChronometerIndex).getId() );
         resetTimer(buttonIndex);
-        datasource.updateHactivity(chronometerNameArray[buttonIndex], chronometerTimeArray[buttonIndex], buttonIndex +1);
+        datasource.updateHactivity(chronometerNameArray[buttonIndex], chronometerTimeArray[buttonIndex], (int) hactivitiesArray.get(buttonIndex).getId() );
+        Log.d("Name, Item, Id: ", chronometerNameArray[buttonIndex] + " "+ Integer.toString((int)chronometerTimeArray[buttonIndex]) + " " +Integer.toString( (int) hactivitiesArray.get(buttonIndex).getId()));
+        //Causes the datebase not be updated, buttonIndex is wrong
+        //TODO Figure out a way to do it ( this )  better
+        //Button index
+
 
         Button button_pause=(Button)findViewById(R.id.button_pause);
         if(!isPauseVisible) {
@@ -274,10 +285,14 @@ public class HabifierActivity extends Activity {
 
     public void graphButtonClicked(View view) {
         Intent intent = new Intent(this, GraphActivity.class);
-        updateChronometerTimeArray();
-        intent.putExtra(EXTRA_MESSAGE,chronometerTimeArray);
+        //updateChronometerTimeArray();
+        datasource.updateHactivity(chronometerNameArray[lastChronometerIndex], chronometerTimeArray[lastChronometerIndex], (int) hactivitiesArray.get(lastChronometerIndex).getId() );
+        intent.putExtra(CHRONOMETERARRAY_MESSAGE, chronometerTimeArray);
+        Log.d("chronometerArrayLenght at habifieractivity", Integer.toString(chronometerNameArray.length));
+        intent.putExtra(CHRONOMETERNAME_MESSAGE, chronometerNameArray);
         startActivity(intent);
     }
+
     public void pauseButtonClicked(View view) {
         resumeChronometerAction();
     }
@@ -301,11 +316,53 @@ public class HabifierActivity extends Activity {
     public void updateChronometerTimeArray() {
         List<Hactivity> hactivities  = datasource.getAllHactivities(); //TODO CONTINUE
         Log.d("Number of hactivities", Integer.toString(hactivities.size()));
+        int i = 0;
         for (Hactivity item : hactivities){
-            if((int)item.getId() < 4) {
-                Log.d("name", item.getComment());
-                chronometerTimeArray[(int) item.getId()] = item.getTime();
-            }
+            //if((int)item.getId() < 4) {
+                Log.d("HabifierActivity, getName()", item.getHactivity());
+                chronometerTimeArray[i] = item.getTime();
+                Log.d("HabifierActivity, getId()", Integer.toString((int) item.getId()));
+                Log.d("HabifierActivity, getTime()", Integer.toString((int) item.getTime()));
+                Log.d("HabifierActivity, getDate()", Integer.toString((int) item.getDate().getTime()));
+
+                i++;
+            //}
+            //
+        }
+
+        i = 0;
+
+        for (Hactivity item : hactivitiesArray){
+            //if((int)item.getId() < 4) {
+            Log.d("name", item.getHactivity());
+            chronometerTimeArray[i] = item.getTime();
+            Log.d("HabifierActivity, getId()", Integer.toString((int) item.getId()));
+            Log.d("HabifierActivity, getTime()", Integer.toString((int) item.getTime()));
+            Log.d("HabifierActivity, getDate()", Integer.toString((int) item.getDate().getTime()));
+
+            i++;
+            //}
+            //
+        }
+
+
+    }
+
+    public void debugLogHactivities(){
+        List<Hactivity> hactivities  = datasource.getAllHactivities();
+        int i = 0;
+        DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+        for (Hactivity item : hactivities){
+            //if((int)item.getId() < 4) {
+            Log.d("name", item.getHactivity());
+            Log.d("HabifierActivity, getId()", Integer.toString((int) item.getId()));
+            Log.d("HabifierActivity, getTime()", Integer.toString((int) item.getTime()));
+            Log.d("HabifierActivity, getDate()", Integer.toString((int) item.getDate().getTime()));
+            String reportDate = df.format(item.getDate());
+            Log.d("Item date, Date()", reportDate);
+
+            i++;
+            //}
             //
         }
     }

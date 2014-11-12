@@ -29,6 +29,13 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.elmeripoikolainen.habifier.HabifierActivity" />
         </activity>
+
+<!--        <provider
+            android:authorities="de.elmis.android.todos.contentprovider"
+            android:name=".contentprovider.MyTodoContentProvider"
+            android:exported="true" >
+
+        </provider>-->
     </application>
 
 </manifest>

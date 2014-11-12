@@ -4,8 +4,13 @@ package com.elmeripoikolainen.habifier;
  * Created by elmeripoikolainen on 28/10/14.
  */
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -13,8 +18,6 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
-
-import org.w3c.dom.Comment;
 
 public class HactivityDataSource {
 
@@ -49,9 +52,15 @@ public class HactivityDataSource {
         dbHelper.close();
     }
 
+
+    /*
+        Creates a new hacktivity
+     */
     public Hactivity createHactivity(String hactivity) {
         ContentValues values = new ContentValues();
         values.put(MySQLiteHelper.COLUMN_HACTIVITY, hactivity);
+        String date_now = getDateTime();
+        values.put(MySQLiteHelper.COLUMN_DATE, date_now);
         long insertId = database.insert(MySQLiteHelper.TABLE_HACTIVITIES, null,
                 values);
         Cursor cursor = database.query(MySQLiteHelper.TABLE_HACTIVITIES,
@@ -62,6 +71,26 @@ public class HactivityDataSource {
         cursor.close();
         return newHactivity;
     }
+
+    //TODO THIS FUNCTION IS UNIMPORTANT, MAY BE REMOVED
+    public Hactivity createHactivityDayBefore(String hactivity) {
+        ContentValues values = new ContentValues();
+        values.put(MySQLiteHelper.COLUMN_HACTIVITY, hactivity);
+
+        String date_now = getDateTimeCorrupted();
+        values.put(MySQLiteHelper.COLUMN_DATE, date_now);
+        values.put(MySQLiteHelper.COLUMN_TIME, 4000);
+        long insertId = database.insert(MySQLiteHelper.TABLE_HACTIVITIES, null,
+                values);
+        Cursor cursor = database.query(MySQLiteHelper.TABLE_HACTIVITIES,
+                allColumns, MySQLiteHelper.COLUMN_ID + " = " + insertId, null,
+                null, null, null);
+        cursor.moveToFirst();
+        Hactivity newHactivity = cursorToHactivity(cursor);
+        cursor.close();
+        return newHactivity;
+    }
+
 
     public void deleteHactivities(Hactivity hactivity) {
         long id = hactivity.getId();
@@ -82,6 +111,9 @@ public class HactivityDataSource {
             hactivities.add(hactivity);
             cursor.moveToNext();
         }
+
+
+        Log.d("Cursor, position", Integer.toString( cursor.getPosition()));
         // make sure to close the cursor
         cursor.close();
         return hactivities;
@@ -90,7 +122,21 @@ public class HactivityDataSource {
     private Hactivity cursorToHactivity(Cursor cursor) {
         Hactivity hactivity = new Hactivity();
         hactivity.setId(cursor.getLong(0));
-        hactivity.setComment(cursor.getString(1));
+        hactivity.setHactivity(cursor.getString(1));
+        hactivity.setTime(cursor.getInt(2));
+
+
+
+        DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.sss");
+        Date date = new Date();
+        try{
+            date = formatter.parse(cursor.getString(3));
+            hactivity.setDate(date);
+        } catch (java.text.ParseException ex){
+            Log.d("Parse failed", ex.getMessage());
+        }
+
+        hactivity.setDate(date);
         return hactivity;
     }
 
@@ -124,5 +170,26 @@ public class HactivityDataSource {
         //} else {
         //    createHactivity(hactivity);
         //}
+    }
+
+
+    private String getDateTime() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(
+                "yyyy-MM-dd HH:mm:ss.sss", Locale.getDefault());
+        DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        Date date = new Date();
+        String reportDate = df.format(date);
+        Log.d("Date created at beginning", reportDate);
+        return dateFormat.format(date);
+    }
+
+    private String getDateTimeCorrupted() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(
+                "yyyy-MM-dd HH:mm:ss.sss", Locale.getDefault());
+        DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        Date date = new Date(new Date().getTime() - 24 * 60 * 60 * 1000L);
+        String reportDate = dateFormat.format(date);
+        Log.d("Date created at beginning", reportDate);
+        return dateFormat.format(date);
     }
 }

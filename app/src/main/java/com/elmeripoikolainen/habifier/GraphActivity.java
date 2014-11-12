@@ -1,10 +1,22 @@
 package com.elmeripoikolainen.habifier;
 
-import android.app.Activity;
+import android.app.DatePickerDialog;
+import android.app.DatePickerDialog.OnDateSetListener;
+import android.app.Dialog;
+import android.app.DialogFragment;
 import android.os.Bundle;
+import android.text.format.DateUtils;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import com.echo.holographlibrary.Bar;
@@ -15,27 +27,27 @@ import com.echo.holographlibrary.LinePoint;
 import com.echo.holographlibrary.PieGraph;
 import com.echo.holographlibrary.PieSlice;
 
+
 import android.app.ActionBar;
 import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.graphics.Color;
-import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.NavUtils;
 import android.support.v4.view.ViewPager;
-import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.ArrayAdapter;
+import android.widget.DatePicker;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
+
 
 public class GraphActivity extends FragmentActivity implements
         ActionBar.TabListener{
@@ -59,10 +71,18 @@ public class GraphActivity extends FragmentActivity implements
     Spinner spinner;
     ArrayAdapter<CharSequence> adapter;
 
+    //For modifying the graphs
     private static long[] chronometerTimeArray;
+    private static String[] chronometerNameArray;
+    private static Date graphMinDate;
+    private static Date chosenDate = new Date();
+
     public final static int PIE_CHART = 0;
-    public final static int LINE_GRAPH = 2;
     public final static int BAR_GRAPH = 1;
+    public final static int LINE_GRAPH = 2;
+    public final static long day_in_long =  +  24 * 60 * 60 * 1000L;
+
+    private HactivityDataSource datasource;
 
 
     @Override
@@ -108,7 +128,20 @@ public class GraphActivity extends FragmentActivity implements
         }
         //Added
         Intent intent = getIntent();
-        chronometerTimeArray = intent.getLongArrayExtra(HabifierActivity.EXTRA_MESSAGE);
+        Bundle extras = intent.getExtras();
+        chronometerTimeArray = extras.getLongArray(HabifierActivity.CHRONOMETERARRAY_MESSAGE);
+        chronometerNameArray = extras.getStringArray(HabifierActivity.CHRONOMETERNAME_MESSAGE);
+
+        //Log.d("chronometerTimeArrayLength",  Integer.toString(chronometerTimeArray.length));
+        //Log.d("chronometerArrayLenght", Integer.toString(chronometerNameArray.length));
+
+
+
+        datasource = new HactivityDataSource(this);
+        //datasource.reset();
+        datasource.open();
+
+        datasource.getAllHactivities();
 
 /*        spinner = (Spinner) findViewById(R.id.days_spinner);
         // Create an ArrayAdapter using the string array and a default spinner layout
@@ -140,9 +173,216 @@ public class GraphActivity extends FragmentActivity implements
                 //
                 NavUtils.navigateUpFromSameTask(this);
                 return true;
+            case R.id.menuToday:
+                //openSearch();
+                Date date_now = new Date();
+                changeValues(date_now, 1);
+                return true;
+            case R.id.menuYesterday:
+                //openSettings();
+                Date date_yesterday = new Date(System.currentTimeMillis() - day_in_long);
+                changeValues(date_yesterday, 2);
+                return true;
+            case R.id.menuSpecifyADay:
+                showDatePickerDialog();
+                //changeValues(chosenDate, 3);
+                //changeValues(3);
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
+
+    public void changeValues(Date day_selected, int choice){
+
+        List<Hactivity> hactivities  = datasource.getAllHactivities();
+        Log.d("Number of hactivities", Integer.toString(hactivities.size()));
+        if(DateUtils.isToday((new Date()).getTime())){
+            Log.d("Dateutils success", "is today");
+        }
+        DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+        String reportDate = df.format(new Date());
+        Log.d("Item date, Date()", reportDate);
+        String chosenDateofChangeValues = df.format((day_selected));
+//        Log.d("Chosen date", chosenDateofChangeValues);
+//        Log.d("choice", Integer.toString(choice));
+//
+//        Log.d("Chosendate in time", Long.toString(chosenDate.getTime()/day_in_long));
+        //Calendar
+//        Calendar c1 = Calendar.getInstance();
+//        Calendar c2 = Calendar.getInstance();
+//
+//        c1.setTime(chosenDate);
+//        c2.setTime(someOtherDate);
+//
+//        int yearDiff = c1.get(Calendar.YEAR) - c2.get(Calendar.YEAR);
+//        int monthDiff = c1.get(Calendar.MONTH) - c2.get(Calendar.MONTH);
+//        int dayDiff = c1.get(Calendar.DAY_OF_MONTH) - c2.get(Calendar.DAY_OF_MONTH);
+        //calendar
+
+        for (Hactivity item : hactivities) {
+            int index = Arrays.asList(chronometerNameArray).indexOf(item.getHactivity());
+            reportDate = df.format(item.getDate());
+            //Log.d("Item date", reportDate);
+            //Log.d("Itemdate in time", Long.toString(item.getDate().getTime()/day_in_long));
+            if ( DateUtils.isToday( item.getDate().getTime()) && DateUtils.isToday(day_selected.getTime() ) && choice == 1 ) {
+                Log.d("Item number, today",  Integer.toString((int) item.getId()) );
+                chronometerTimeArray[index] = item.getTime();
+            } else if (DateUtils.isToday(item.getDate().getTime() +  day_in_long) && DateUtils.isToday(day_selected.getTime()  +  day_in_long) && choice == 2 ){
+                Log.d("Item number, yesterday",  Integer.toString((int) item.getId()) );
+                chronometerTimeArray[index] = item.getTime();
+            } //else if (item.getDate().equals(chosenDate) && choice == 3){ // BUG IN EQUALS :-ooooo
+            //else if (item.getDate().getTime()/day_in_long == chosenDate.getTime()/day_in_long && choice == 3){
+            else if (isSameDay(item.getDate(), chosenDate) && choice == 3){
+                Log.d("Item number, chosen Date",  Integer.toString((int) item.getId()) );
+                chronometerTimeArray[index] = item.getTime();
+                Log.d("Item number, getTime value", Integer.toString((int) item.getTime() ));
+            }
+
+        }
+            //if( day == today ){
+        //  //get all values days with the selected day
+        // } if else ( day == yesterday ) {
+        // get all values of days with selected day
+        // update all graphs with the selected day
+        // }
+
+        changeGraphValues();
+
+
+        Log.d("Test", "test");
+    }
+
+    public boolean isSameDay(Date date1, Date date2){
+        Calendar c1 = Calendar.getInstance();
+        Calendar c2 = Calendar.getInstance();
+
+        c1.setTime(date1);
+        c2.setTime(date2);
+
+        int yearDiff = c1.get(Calendar.YEAR) - c2.get(Calendar.YEAR);
+        int monthDiff = c1.get(Calendar.MONTH) - c2.get(Calendar.MONTH);
+        int dayDiff = c1.get(Calendar.DAY_OF_MONTH) - c2.get(Calendar.DAY_OF_MONTH);
+        if (yearDiff == 0 && monthDiff == 0 && dayDiff == 0){
+            return true;
+        } else {
+            return false;
+        }
+
+
+    }
+
+    public void changeGraphValues(){
+        PieGraph pieGraph = (PieGraph) findViewById(R.id.graph);
+        PieSlice slice = pieGraph.getSlice(0);
+        slice.setGoalValue(chronometerTimeArray[0]);
+
+        slice = pieGraph.getSlice(1);
+        slice.setGoalValue(chronometerTimeArray[1]);
+
+        slice = pieGraph.getSlice(2);
+        slice.setGoalValue(chronometerTimeArray[2]);
+
+        slice = pieGraph.getSlice(3);
+
+        slice.setGoalValue(chronometerTimeArray[3]);
+
+
+        pieGraph.animateToGoalValues();
+
+
+        BarGraph g = (BarGraph) findViewById(R.id.graphBar);
+
+        ArrayList<Bar> points = new ArrayList<Bar>();
+        Bar d = new Bar();
+        d.setColor(Color.parseColor("#99CC00"));
+        d.setName("Work");
+        d.setGoalValue((int)chronometerTimeArray[0]/1000);
+        d.setValueSuffix(" s");
+        Bar d2 = new Bar();
+        d2.setColor(Color.parseColor("#FFBB33"));
+        d2.setName("Study");
+        d2.setGoalValue((int)chronometerTimeArray[1]/1000);
+        d2.setValueSuffix(" s");
+        Bar d3 = new Bar();
+        d3.setColor(Color.parseColor("#AA66CC"));
+        d3.setName("Leisure");
+        d3.setGoalValue((int)chronometerTimeArray[2]/1000);
+        d3.setValueSuffix(" s");
+        Bar d4 = new Bar();
+        d4.setColor(getResources().getColor(R.color.blue));
+        d4.setName("Eating");
+        d4.setGoalValue((int)chronometerTimeArray[3]/1000);
+        d4.setValueSuffix(" s");
+/*            Bar d5 = new Bar();
+            d5.setColor(Color.parseColor("#AA66CC"));
+            d5.setName("Bother");
+            d5.setGoalValue(10);
+            d5.setValueSuffix(" s");*/
+        points.add(d);
+        points.add(d2);
+        points.add(d3);
+        points.add(d4);
+        //points.add(d5);
+
+
+        g.setBars(points);
+
+        g.setDuration(1200);//default if unspecified is 300 ms
+        g.setInterpolator(new AccelerateDecelerateInterpolator());//Only use over/undershoot  when not inserting/deleting
+        g.setValueStringPrecision(1); //1 decimal place. 0 by default for integers.
+        g.animateToGoalValues();
+
+    }
+
+    public void showDatePickerDialog() { //Should have View v as argument
+        graphMinDate = getHactivitiesMinDate();
+        DatePickerFragment newFragment = new DatePickerFragment();
+
+        newFragment.setCallBack(ondate);
+
+        //newFragment.setC
+
+
+        //newFragment.show(getSupportFragmentManager(), "datePicker");
+        newFragment.show(getFragmentManager(), "datePicker");
+
+    }
+
+    OnDateSetListener ondate = new OnDateSetListener() {
+        @Override
+        public void onDateSet(DatePicker view, int year, int month,
+                              int day) {
+            Calendar calendar = Calendar.getInstance();
+            calendar.clear();
+            calendar.set(Calendar.MONTH, month);
+            calendar.set(Calendar.YEAR, year);
+            calendar.set(Calendar.DAY_OF_MONTH, day);
+            chosenDate = calendar.getTime();
+            // Do something with the date chosen by the user
+            changeValues(chosenDate, 3);
+        }
+    };
+
+    public Date getHactivitiesMinDate(){
+        List<Hactivity> hactivities  = datasource.getAllHactivities();
+        Date min_date = new Date();
+        DateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        String deportRate = df.format(min_date);
+        Log.d("Item date, Date()", deportRate);
+        for (Hactivity item : hactivities) {
+            String reportDate = df.format(item.getDate());
+            Log.d("Item date, Date()", reportDate);
+            Log.d("Comparing minimum date", "testing");
+            if(item.getDate().before(min_date)){
+                min_date = item.getDate();
+                Log.d("Comparing minimum date,", "success, day is before the date");
+            }
+        }
+        String reportDate = df.format(min_date);
+        Log.d("Item date, Date()", reportDate);
+        return min_date;
+    }
+
 
     @Override
     public void onTabSelected(ActionBar.Tab tab,
@@ -253,8 +493,15 @@ public class GraphActivity extends FragmentActivity implements
             dummyTextView.setText(Integer.toString(getArguments().getInt(
                     ARG_SECTION_NUMBER)));
 
-
             pieGraph = (PieGraph) rootView.findViewById(R.id.graph);
+
+            setValues();
+
+            return rootView;
+        }
+
+
+        public void setValues(){
             PieSlice slice = new PieSlice();
             slice.setColor(Color.parseColor("#99CC00"));
             slice.setGoalValue(chronometerTimeArray[0]);
@@ -279,10 +526,9 @@ public class GraphActivity extends FragmentActivity implements
             pieGraph.setDuration(1000);//default if unspecified is 300 ms
             pieGraph.setInterpolator(new AccelerateDecelerateInterpolator());//default if unspecified is linear; constant speed
             pieGraph.animateToGoalValues();
-
-
-            return rootView;
         }
+
+
     }
 
 
@@ -360,8 +606,13 @@ public class GraphActivity extends FragmentActivity implements
                     .findViewById(R.id.section_label);
             dummyTextView.setText(Integer.toString(getArguments().getInt(
                     ARG_SECTION_NUMBER)));
+            g = (BarGraph)rootView.findViewById(R.id.graphBar);
+            setValues();
 
+            return rootView;
+        }
 
+        public void setValues(){
             //TODO Create a format data function for these
 
             ArrayList<Bar> points = new ArrayList<Bar>();
@@ -396,16 +647,51 @@ public class GraphActivity extends FragmentActivity implements
             points.add(d4);
             //points.add(d5);
 
-            g = (BarGraph)rootView.findViewById(R.id.graphBar);
+
             g.setBars(points);
 
             g.setDuration(1200);//default if unspecified is 300 ms
             g.setInterpolator(new AccelerateDecelerateInterpolator());//Only use over/undershoot  when not inserting/deleting
             g.setValueStringPrecision(1); //1 decimal place. 0 by default for integers.
             g.animateToGoalValues();
-
-
-            return rootView;
         }
+    }
+
+    public static class DatePickerFragment extends DialogFragment
+            //implements DatePickerDialog.OnDateSetListener
+        {
+
+        DatePickerDialog.OnDateSetListener onDateSet;
+
+        public void setCallBack(DatePickerDialog.OnDateSetListener ondate) {
+            onDateSet = ondate;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            // Use the current date as the default date in the picker
+            final Calendar c = Calendar.getInstance();
+            int year = c.get(Calendar.YEAR);
+            int month = c.get(Calendar.MONTH);
+            int day = c.get(Calendar.DAY_OF_MONTH);
+
+            // Create a new instance of DatePickerDialog and return it
+            DatePickerDialog dialog = new DatePickerDialog(getActivity(), onDateSet, year, month, day);
+            dialog.getDatePicker().setMaxDate((new Date()).getTime()); //This might create bugs
+            dialog.getDatePicker().setMinDate(graphMinDate.getTime());
+
+            return dialog;
+        }
+
+//        public void onDateSet(DatePicker view, int year, int month, int day) {
+//            Calendar calendar = Calendar.getInstance();
+//            calendar.clear();
+//            calendar.set(Calendar.MONTH, month);
+//            calendar.set(Calendar.YEAR, year);
+//            calendar.set(Calendar.DAY_OF_MONTH, day);
+//            chosenDate = calendar.getTime();
+//            // Do something with the date chosen by the user
+//
+//        }
     }
 }

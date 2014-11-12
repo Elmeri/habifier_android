@@ -31,11 +31,11 @@ public class Hactivity {
         this.id = id;
     }
 
-    public String getComment() {
+    public String getHactivity() {
         return activity;
     }
 
-    public void setComment(String comment) {
+    public void setHactivity(String comment) {
         this.activity = comment;
     }
 

@@ -23,7 +23,7 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
     private static final String DATABASE_CREATE = "create table "
             + TABLE_HACTIVITIES + "(" + COLUMN_ID
             + " integer primary key autoincrement, " + COLUMN_HACTIVITY
-            + " text not null, " + COLUMN_TIME + " number, " + COLUMN_DATE + " integer);";
+            + " text not null, " + COLUMN_TIME + " integer, " + COLUMN_DATE + " datetime default current_timestamp);";
 
 //    private static final String DATABASE_CREATE = "create table "
 //            + TABLE_HACTIVITIES + "(" + COLUMN_ID
