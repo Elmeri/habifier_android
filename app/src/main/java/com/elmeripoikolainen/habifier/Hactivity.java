@@ -10,6 +10,19 @@ public class Hactivity {
     private String activity;
     private long time;
     private Date date;
+    private boolean selected;
+
+    public boolean isSelected() { return selected; }
+
+    public void setSelected(boolean selected) { this.selected = selected; }
+
+    public void setSelected(int selected) {
+        if (selected == 1){
+            this.setSelected(true);
+        } else {
+            this.setSelected(false);
+        }
+    }
 
     public Date getDate() { return date; }
 

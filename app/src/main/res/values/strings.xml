@@ -22,10 +22,17 @@
     <string name="title_section3">Section 3</string>
     <string name="title_activity_graph">GraphActivity</string>
     <string name="action_search">Search</string>
+
     <string-array name="days_array">
         <item>Today</item>
         <item>Yesterday</item>
         <item>Choose a day</item>
     </string-array>
+
+    <string name="title_activity_addhactivity">Addhactivity</string>
+
+    <string name="title_activity_define_hactivity">DefineHactivity</string>
+    <string name="define_hactivity_hactivity_name">Name of activity</string>
+
 
 </resources>

@@ -4,6 +4,7 @@ import android.app.DatePickerDialog;
 import android.app.DatePickerDialog.OnDateSetListener;
 import android.app.Dialog;
 import android.app.DialogFragment;
+import android.content.Context;
 import android.os.Bundle;
 import android.text.format.DateUtils;
 import android.util.Log;
@@ -49,6 +50,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+
 public class GraphActivity extends FragmentActivity implements
         ActionBar.TabListener{
 
@@ -81,6 +83,12 @@ public class GraphActivity extends FragmentActivity implements
     public final static int BAR_GRAPH = 1;
     public final static int LINE_GRAPH = 2;
     public final static long day_in_long =  +  24 * 60 * 60 * 1000L;
+    public final static double HOUR_IN_MS = 60*60*1000.0;
+    public final static double MINUTE_IN_MS = 60*1000.0;
+
+    public final static int BAR_GRAPH_SECONDS = 0;
+    public final static int BAR_GRAPH_MINUTES = 1;
+    public final static int BAR_GRAPH_HOURS = 2;
 
     private HactivityDataSource datasource;
 
@@ -203,22 +211,11 @@ public class GraphActivity extends FragmentActivity implements
         String reportDate = df.format(new Date());
         Log.d("Item date, Date()", reportDate);
         String chosenDateofChangeValues = df.format((day_selected));
-//        Log.d("Chosen date", chosenDateofChangeValues);
-//        Log.d("choice", Integer.toString(choice));
-//
-//        Log.d("Chosendate in time", Long.toString(chosenDate.getTime()/day_in_long));
-        //Calendar
-//        Calendar c1 = Calendar.getInstance();
-//        Calendar c2 = Calendar.getInstance();
-//
-//        c1.setTime(chosenDate);
-//        c2.setTime(someOtherDate);
-//
-//        int yearDiff = c1.get(Calendar.YEAR) - c2.get(Calendar.YEAR);
-//        int monthDiff = c1.get(Calendar.MONTH) - c2.get(Calendar.MONTH);
-//        int dayDiff = c1.get(Calendar.DAY_OF_MONTH) - c2.get(Calendar.DAY_OF_MONTH);
-        //calendar
 
+
+        //Change this to fetch only the selected day of hactivities
+
+        int toastFlag = 1;
         for (Hactivity item : hactivities) {
             int index = Arrays.asList(chronometerNameArray).indexOf(item.getHactivity());
             reportDate = df.format(item.getDate());
@@ -227,18 +224,31 @@ public class GraphActivity extends FragmentActivity implements
             if ( DateUtils.isToday( item.getDate().getTime()) && DateUtils.isToday(day_selected.getTime() ) && choice == 1 ) {
                 Log.d("Item number, today",  Integer.toString((int) item.getId()) );
                 chronometerTimeArray[index] = item.getTime();
+                toastFlag = 0;
             } else if (DateUtils.isToday(item.getDate().getTime() +  day_in_long) && DateUtils.isToday(day_selected.getTime()  +  day_in_long) && choice == 2 ){
                 Log.d("Item number, yesterday",  Integer.toString((int) item.getId()) );
                 chronometerTimeArray[index] = item.getTime();
+                toastFlag = 0;
             } //else if (item.getDate().equals(chosenDate) && choice == 3){ // BUG IN EQUALS :-ooooo
             //else if (item.getDate().getTime()/day_in_long == chosenDate.getTime()/day_in_long && choice == 3){
             else if (isSameDay(item.getDate(), chosenDate) && choice == 3){
                 Log.d("Item number, chosen Date",  Integer.toString((int) item.getId()) );
                 chronometerTimeArray[index] = item.getTime();
                 Log.d("Item number, getTime value", Integer.toString((int) item.getTime() ));
+                toastFlag = 0;
             }
 
         }
+
+        if (toastFlag == 1){
+            Context context = getApplicationContext();
+            CharSequence text = "Sorry, there is no entry for that day.";
+            int duration = Toast.LENGTH_SHORT;
+
+            Toast toast = Toast.makeText(context, text, duration);
+            toast.show();
+        }
+
             //if( day == today ){
         //  //get all values days with the selected day
         // } if else ( day == yesterday ) {
@@ -283,36 +293,47 @@ public class GraphActivity extends FragmentActivity implements
         slice.setGoalValue(chronometerTimeArray[2]);
 
         slice = pieGraph.getSlice(3);
-
         slice.setGoalValue(chronometerTimeArray[3]);
 
-
+        pieGraph.setDuration(1000);
+        pieGraph.setInterpolator(new AccelerateDecelerateInterpolator());
         pieGraph.animateToGoalValues();
+        // TODO: changing values does not run smoothly, is it possible to fix by removing some of the below features?
+
 
 
         BarGraph g = (BarGraph) findViewById(R.id.graphBar);
+
+        int timeFormat = BAR_GRAPH_SECONDS;
+        for (int i = 0; i < chronometerTimeArray.length ; i++){
+            if ( chronometerTimeArray[i] > HOUR_IN_MS) { //Over a hour
+                timeFormat = BAR_GRAPH_HOURS;
+            } else if (chronometerTimeArray[i] > MINUTE_IN_MS ) { //Over a minute
+                timeFormat = BAR_GRAPH_MINUTES;
+            }
+        }
 
         ArrayList<Bar> points = new ArrayList<Bar>();
         Bar d = new Bar();
         d.setColor(Color.parseColor("#99CC00"));
         d.setName("Work");
-        d.setGoalValue((int)chronometerTimeArray[0]/1000);
-        d.setValueSuffix(" s");
+        d = formatBar(d,0,timeFormat);
+
         Bar d2 = new Bar();
         d2.setColor(Color.parseColor("#FFBB33"));
         d2.setName("Study");
-        d2.setGoalValue((int)chronometerTimeArray[1]/1000);
-        d2.setValueSuffix(" s");
+        d2 = formatBar(d2,1,timeFormat);
+
         Bar d3 = new Bar();
         d3.setColor(Color.parseColor("#AA66CC"));
         d3.setName("Leisure");
-        d3.setGoalValue((int)chronometerTimeArray[2]/1000);
-        d3.setValueSuffix(" s");
+        d3 = formatBar(d3,2,timeFormat);
+
         Bar d4 = new Bar();
         d4.setColor(getResources().getColor(R.color.blue));
         d4.setName("Eating");
-        d4.setGoalValue((int)chronometerTimeArray[3]/1000);
-        d4.setValueSuffix(" s");
+        d4 = formatBar(d4,3,timeFormat);
+
 /*            Bar d5 = new Bar();
             d5.setColor(Color.parseColor("#AA66CC"));
             d5.setName("Bother");
@@ -332,6 +353,25 @@ public class GraphActivity extends FragmentActivity implements
         g.setValueStringPrecision(1); //1 decimal place. 0 by default for integers.
         g.animateToGoalValues();
 
+    }
+
+    public Bar formatBar(Bar bar, int index, int timeFormat){
+        if(timeFormat == BAR_GRAPH_SECONDS){
+            bar.setGoalValue((int)chronometerTimeArray[index]/1000);
+            bar.setValueSuffix(" s");
+        } else if (timeFormat == BAR_GRAPH_MINUTES){
+            bar.setGoalValue((int)(chronometerTimeArray[index]/MINUTE_IN_MS));
+            int temp = ((int)chronometerTimeArray[index]/1000)% ((int)60);
+            // use % to show remaining value in the suffix
+            bar.setValueSuffix(" m " + Integer.toString(temp) + " s");
+
+        } else if (timeFormat == BAR_GRAPH_HOURS){
+            bar.setGoalValue((int)(chronometerTimeArray[index]/HOUR_IN_MS));
+            int temp = ((int)chronometerTimeArray[index]/(1000*60))% ((int)60);
+            //  use % to show remaining value in the suffix
+            bar.setValueSuffix(" h " + Integer.toString(temp) + " m");
+        }
+        return bar;
     }
 
     public void showDatePickerDialog() { //Should have View v as argument
@@ -615,27 +655,36 @@ public class GraphActivity extends FragmentActivity implements
         public void setValues(){
             //TODO Create a format data function for these
 
+            int timeFormat = BAR_GRAPH_SECONDS;
+            for (int i = 0; i < chronometerTimeArray.length ; i++){
+                if (chronometerTimeArray[i] > MINUTE_IN_MS ) { //Over a minute
+                    timeFormat = BAR_GRAPH_MINUTES;
+                } else if ( chronometerTimeArray[i] > HOUR_IN_MS) { //Over a hour
+                    timeFormat = BAR_GRAPH_HOURS;
+                }
+            }
+
             ArrayList<Bar> points = new ArrayList<Bar>();
             Bar d = new Bar();
             d.setColor(Color.parseColor("#99CC00"));
             d.setName("Work");
-            d.setGoalValue((int)chronometerTimeArray[0]/1000);
-            d.setValueSuffix(" s");
+            d = formatBar(d,0,timeFormat);
+
             Bar d2 = new Bar();
             d2.setColor(Color.parseColor("#FFBB33"));
             d2.setName("Study");
-            d2.setGoalValue((int)chronometerTimeArray[1]/1000);
-            d2.setValueSuffix(" s");
+            d2 = formatBar(d2,1,timeFormat);
+
             Bar d3 = new Bar();
             d3.setColor(Color.parseColor("#AA66CC"));
             d3.setName("Leisure");
-            d3.setGoalValue((int)chronometerTimeArray[2]/1000);
-            d3.setValueSuffix(" s");
+            d3 = formatBar(d3,2,timeFormat);
+
             Bar d4 = new Bar();
             d4.setColor(getResources().getColor(R.color.blue));
             d4.setName("Eating");
-            d4.setGoalValue((int)chronometerTimeArray[3]/1000);
-            d4.setValueSuffix(" s");
+            d4 = formatBar(d4,3,timeFormat);
+
 /*            Bar d5 = new Bar();
             d5.setColor(Color.parseColor("#AA66CC"));
             d5.setName("Bother");
@@ -655,6 +704,20 @@ public class GraphActivity extends FragmentActivity implements
             g.setValueStringPrecision(1); //1 decimal place. 0 by default for integers.
             g.animateToGoalValues();
         }
+
+        public Bar formatBar(Bar bar, int index, int timeFormat){
+            if(timeFormat == BAR_GRAPH_SECONDS){
+                bar.setGoalValue((int)chronometerTimeArray[index]/1000);
+                bar.setValueSuffix(" s");
+            } else if (timeFormat == BAR_GRAPH_MINUTES){
+                bar.setGoalValue((float)(chronometerTimeArray[index]/MINUTE_IN_MS));
+                bar.setValueSuffix(" m");
+            } else if (timeFormat == BAR_GRAPH_HOURS){
+                bar.setGoalValue((float)(chronometerTimeArray[index]/HOUR_IN_MS));
+                bar.setValueSuffix(" h");
+            }
+            return bar;
+        }
     }
 
     public static class DatePickerFragment extends DialogFragment
@@ -662,6 +725,7 @@ public class GraphActivity extends FragmentActivity implements
         {
 
         DatePickerDialog.OnDateSetListener onDateSet;
+
 
         public void setCallBack(DatePickerDialog.OnDateSetListener ondate) {
             onDateSet = ondate;
