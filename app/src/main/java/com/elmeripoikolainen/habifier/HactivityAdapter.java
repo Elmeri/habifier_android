@@ -21,10 +21,17 @@ public class HactivityAdapter extends ArrayAdapter<Hactivity> {
     boolean checkAll_flag = false;
     boolean checkItem_flag = false;
 
+    private HactivityDataSource datasource;
+
     public HactivityAdapter(Activity context, List<Hactivity> list) {
         super(context, R.layout.hactivity_row, list);
         this.context = context;
         this.list = list;
+
+
+
+        datasource = new HactivityDataSource(context);
+        datasource.open();
     }
 
     static class ViewHolder {
@@ -49,12 +56,15 @@ public class HactivityAdapter extends ArrayAdapter<Hactivity> {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     int check_count = 0;
+                    int getPosition = (Integer) buttonView.getTag();  // Here we get the position that we have set for the checkbox using setTag.
+                    list.get(getPosition).setSelected(buttonView.isChecked()); // Set the value of checkbox to maintain its state.
                     for (Hactivity item : list){
                         if(item.isSelected())
                             check_count++;
                     }
-                    if(check_count > 3 && buttonView.isChecked()){
+                    if(check_count > 4 && buttonView.isChecked()){
                         buttonView.setChecked(false);
+                        list.get(getPosition).setSelected(false); //Set value to false since there are too much checkboxed checked.
                         //Context toastContext = context;
                         CharSequence text = "Only 4 activities are allowed at the same time.";
                         int duration = Toast.LENGTH_SHORT;
@@ -62,11 +72,17 @@ public class HactivityAdapter extends ArrayAdapter<Hactivity> {
                         Toast toast = Toast.makeText(context, text, duration);
                         toast.show();
                     } else {
-                        int getPosition = (Integer) buttonView.getTag();  // Here we get the position that we have set for the checkbox using setTag.
-                        list.get(getPosition).setSelected(buttonView.isChecked()); // Set the value of checkbox to maintain its state.
+                        //int getPosition = (Integer) buttonView.getTag();  // Here we get the position that we have set for the checkbox using setTag.
+                        //list.get(getPosition).setSelected(buttonView.isChecked()); // Set the value of checkbox to maintain its state.
+                        //Set checkbox hactivity in datasource here
+                        Hactivity tempHactivity = list.get(getPosition);
+                        datasource.updateHactivityList(tempHactivity.getHactivity(), tempHactivity.isSelected(), (int) tempHactivity.getId());
                     }
                 }
             });
+
+
+
             convertView.setTag(viewHolder);
             convertView.setTag(R.id.hactivity_label, viewHolder.text);
             convertView.setTag(R.id.hactivity_check, viewHolder.checkbox);

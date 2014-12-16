@@ -13,7 +13,7 @@
         <menu>
             <item
                 android:id="@+id/menuAddANewActivity"
-                android:title="Add a new activity" />
+                android:title="Manage activities" />
             <item
                 android:id="@+id/menuSettings"
                 android:title="Settings"/>

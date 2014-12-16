@@ -1,11 +1,15 @@
 package com.elmeripoikolainen.habifier;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
@@ -15,6 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +33,12 @@ public class Addhactivity extends Activity implements AdapterView.OnItemClickLis
     List<Hactivity> list = new ArrayList<Hactivity>();
     private HactivityDataSource datasource;
 
+    private int hactivity_positon = -1;
+
+    private final int CONTEXT_MENU_VIEW =1;
+    private final int CONTEXT_MENU_EDIT =2;
+    private final int CONTEXT_MENU_ARCHIVE =3;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,7 +51,7 @@ public class Addhactivity extends Activity implements AdapterView.OnItemClickLis
 
 
         // We get the ListView component from the layout
-        ListView lv = (ListView) findViewById(R.id.listView);
+        final ListView lv = (ListView) findViewById(R.id.listView);
         // This is a simple adapter that accepts as parameter
         // Context
         // Data list
@@ -52,6 +63,90 @@ public class Addhactivity extends Activity implements AdapterView.OnItemClickLis
         adapter = new HactivityAdapter(this,getHactivity());
 
         lv.setAdapter(adapter);
+
+        lv.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+
+            public boolean onItemLongClick(AdapterView<?> arg0, View arg1,
+                                           int pos, long id) {
+                hactivity_positon = pos;
+                registerForContextMenu(lv);
+                openContextMenu(lv);
+                Log.d("long clicked", "pos: " + pos);
+
+                return true;
+            }
+        });
+        lv.setLongClickable(true);
+
+
+        Intent returnIntent = new Intent();
+        setResult(RESULT_CANCELED, returnIntent); //We want to refresh the main screen after returning from this activity
+
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v,ContextMenu.ContextMenuInfo menuInfo) {
+        //Context menu
+        menu.setHeaderTitle("Select action: "); //Add specific text
+        menu.add(Menu.NONE, CONTEXT_MENU_VIEW, Menu.NONE, "Add");
+        //menu.add(Menu.NONE, CONTEXT_MENU_EDIT, Menu.NONE, "Edit");
+        menu.add(Menu.NONE, CONTEXT_MENU_ARCHIVE, Menu.NONE, "Delete");
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        // TODO Auto-generated method stub
+        switch(item.getItemId())
+        {
+            case CONTEXT_MENU_VIEW:
+            {
+                addNewHactivity();
+            }
+            break;
+            case CONTEXT_MENU_EDIT:
+            {
+                // Edit Action
+
+            }
+            break;
+            case CONTEXT_MENU_ARCHIVE:
+            {
+                List<Hactivity> hactivitiesList = datasource.getHactivityList();
+                datasource.deleteHactivitiesList(hactivitiesList.get(hactivity_positon)); // Check
+                Log.d("Context menu delete hactivity position: ", Integer.toString(hactivity_positon));
+                Date date = new Date();
+                datasource.deleteHactivitiesToday(hactivitiesList.get(hactivity_positon), date);
+                //Invalidate view
+                Intent intent = getIntent();
+                finish();
+                startActivity(intent);
+            }
+            break;
+        }
+
+        return super.onContextItemSelected(item);
+    }
+
+
+
+
+    @Override
+    protected void onResume(){
+        super.onResume();
+    }
+
+    @Override
+    protected void onStop(){
+        //Add selected list items to database
+
+        // We get the ListView component from the layout
+//        ListView lv = (ListView) findViewById(R.id.listView);
+//        lv.getAdapter().getItem(0);
+//        for (int i = 0; i <   datasource.getHactivityList().size(); i++){
+//             //Hactivity temp =  lv.getAdapter().getItem(i);
+//        }
+
+        super.onStop();
     }
 
 
@@ -70,16 +165,35 @@ public class Addhactivity extends Activity implements AdapterView.OnItemClickLis
         int id = item.getItemId();
         if (id == R.id.menuAddHactivityAddNew){
             addNewHactivity();
+        } else if (id == R.id.menuAddHactivityFinished){
+            Intent returnIntent = new Intent();
+            setResult(RESULT_CANCELED, returnIntent);
+            finish();
         }
         return super.onOptionsItemSelected(item);
     }
 
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if (requestCode == 1) {
+//            if(resultCode == RESULT_OK){
+//                String result=data.getStringExtra("result");
+//            }
+            if (resultCode == RESULT_CANCELED) {
+                //Write your code if there's no result
+                Intent intent = getIntent();
+                finish();
+                startActivity(intent);
+            }
+        }
+    }//onActivityResult
+
     @Override
-    // This should check the amount of checkboxed checked. It should be four.
     public void onItemClick(AdapterView<?> arg0, View v, int position, long arg3) {
         TextView label = (TextView) v.getTag(R.id.hactivity_label);
         CheckBox checkbox = (CheckBox) v.getTag(R.id.hactivity_check);
         Toast.makeText(v.getContext(), label.getText().toString() + " " + isCheckedOrNot(checkbox), Toast.LENGTH_LONG).show();
+
     }
 
     private String isCheckedOrNot(CheckBox checkbox) {
@@ -90,9 +204,20 @@ public class Addhactivity extends Activity implements AdapterView.OnItemClickLis
     }
 
     private void addNewHactivity(){
-        //New hactivity screen
-        Intent intent = new Intent(this, DefineHactivity.class);
-        startActivity(intent);
+        List<Hactivity> hactivitiesList = datasource.getHactivityList();
+        if(hactivitiesList.size() < 8){
+            Intent intent = new Intent(this, DefineHactivity.class);
+            startActivityForResult(intent,1);
+        } else {
+            //Context toastContext = context;
+            Context context = getApplicationContext();
+            CharSequence text = "Total of 8 activities are allowed at the same time.";
+            int duration = Toast.LENGTH_SHORT;
+            Toast toast = Toast.makeText(context, text, duration);
+            toast.show();
+        }
+
+
     }
 
 
@@ -142,5 +267,6 @@ public class Addhactivity extends Activity implements AdapterView.OnItemClickLis
     private List<Hactivity> getHactivity() {
         return datasource.getHactivityList();
     }
+
 }
 

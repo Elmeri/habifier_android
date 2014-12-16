@@ -39,6 +39,7 @@ public class HabifierActivity extends Activity {
 
     public final static String CHRONOMETERARRAY_MESSAGE = "com.elmeripoikolainen.habifier.CHRONOMETERARRAY_MESSAGE";
     public final static String CHRONOMETERNAME_MESSAGE = "com.elmeripoikolainen.habifier.CHRONOMETERNAME_MESSAGE";
+    public final static String CHRONOMETERCOLOR_MESSAGE = "com.elmeripoikolainen.habifier.CHRONOMETERCOLOR_MESSAGE";
 
     private Chronometer chronometer1;
     private long chronometer1_time;
@@ -55,8 +56,9 @@ public class HabifierActivity extends Activity {
     private int chronometerLength = 4;
     private String[] chronometerNameArray = {"Work", "Study", "Leisure", "Eat"};
     private int[] chronometerColorArray = new int[chronometerLength];
+    private int[] chronometerIndexArray = {0,1,2,3};
     private List<Hactivity> hactivitiesArray = new ArrayList<Hactivity>();
-    private ImageButton[] buttonArray;
+    private Button[] buttonArray;
 
 
     private HactivityDataSource datasource;
@@ -67,6 +69,8 @@ public class HabifierActivity extends Activity {
 
     //Periodical task
     private int mInterval = 100; // 5 seconds by default, can be changed later
+    private int mIntervalSave = 600; // Every 1 min save
+    private int mIntervalCount = 0;
     private Handler mHandler;
 
     //Is chronometerrunning
@@ -90,26 +94,156 @@ public class HabifierActivity extends Activity {
         chronometerColorArray[1] = getResources().getColor(R.color.yellow);
         chronometerColorArray[2] = getResources().getColor(R.color.violet);
         chronometerColorArray[3] = getResources().getColor(R.color.blue);
-        buttonArray = new ImageButton[3];
+        buttonArray = new Button[4];
         button_1 = ((Button) findViewById(R.id.button_1));
         button_2 = ((Button) findViewById(R.id.button_2));
         button_3 = ((Button) findViewById(R.id.button_3));
         button_4 = ((Button) findViewById(R.id.button_4));
+        buttonArray[0] = ((Button) findViewById(R.id.button_1));
+        buttonArray[1] = ((Button) findViewById(R.id.button_2));
+        buttonArray[2] = ((Button) findViewById(R.id.button_3));
+        buttonArray[3] = ((Button) findViewById(R.id.button_4));
 
         Date dateNow = new Date();
 
         datasource = new HactivityDataSource(this);
         datasource.open();
-        datasource.reset();
-        datasource.open();
+//        datasource.reset();
+//        datasource.open();
 
 
         pieGraph = (PieGraph)findViewById(R.id.graph);
 
+        pieGraph.setInnerCircleRatio(200);
+        pieGraph.setPadding(3);
 
-        //Initialize hactivities TODO: FINISH HIM! :-D
+        if(datasource.amountOfEntriesInTheDatabaseList() == 0){
+            //Add basic activities in the list
+            for (int i = 0; i < chronometerNameArray.length ; i++)
+                datasource.createHactivityList(chronometerNameArray[i], Integer.toHexString(chronometerColorArray[i]), true); //Default 4 of them are checked
+            //Also update the color values or consider making that as an input argument?
+        } else{
+            List<Hactivity> hactivitiesListArray = datasource.getHactivityList();
+            for (Hactivity current : hactivitiesListArray){
+                if(current.isSelected()){
+                    //Add to database here if not already there. Or not here? Here.
+                    Log.d("Is hactivity in database boolean: ", Boolean.toString(datasource.isHactivityInDatabase(current, dateNow)));
+                    if(!datasource.isHactivityInDatabase(current, dateNow)){
+                        datasource.createHactivity(current.getHactivity(), current.getColor());
+                    }
+                }
+            }
+            List<Hactivity> hactivities = datasource.getHactivitiesInDay(dateNow); //Actually this needs to change
+            amountOfEntriesInDatabase = datasource.amountOfEntriesForDay(dateNow);
+            chronometerNameArray = new String[amountOfEntriesInDatabase];
+            chronometerColorArray = new int[amountOfEntriesInDatabase];
+            chronometerTimeArray = new long[amountOfEntriesInDatabase];
+            Log.d("Amount of entries in the database", Integer.toString(amountOfEntriesInDatabase));
+            int k = 0; //K keeps track of the color array position
+            Log.d("Is amount of entries bigger than 0 ?", Boolean.toString(0 < amountOfEntriesInDatabase));
+//            for (int i = 0; i < amountOfEntriesInDatabase && k < amountOfEntriesInDatabase; i++){
+//                chronometerNameArray[i] = hactivities.get(i).getHactivity();
+//                Log.d("i value before error: ", Integer.toString(i));
+//                Log.d("K value before error:  ", Integer.toString(k));
+//                Log.d("Chronometer colorArray hactivity name comparison: ", hactivities.get(i).getHactivity() + " "+ hactivitiesListArray.get(k).getHactivity());
+//                if(hactivities.get(i).getHactivity().equals(hactivitiesListArray.get(k).getHactivity())){
+//                    Log.d("Chronometer color array added with index k = ", Integer.toString(k) + " and value : " + hactivitiesListArray.get(k).getColor()  );
+//                    chronometerColorArray[k] = (int) Long.parseLong(hactivitiesListArray.get(k).getColor(), 16);
+//                    k++;
+//                } else {
+//                    for (int j = k;j< amountOfEntriesInDatabase; j++){
+//                        if(hactivities.get(j).getHactivity().equals(hactivitiesListArray.get(i).getHactivity())){
+//                            Log.d("Chronometer color array added (inside for loop) with index k = ", Integer.toString(k) + " and value : " + hactivitiesListArray.get(k).getColor()  );
+//                            chronometerColorArray[j] = (int) Long.parseLong(hactivitiesListArray.get(k).getColor(), 16);
+//                            k = j;
+//                            break;
+//                        }
+//                    }
+//                }
+//                //chronometerColorArray[i] = (int) Long.parseLong(hactivitiesListArray.get(hacIndex).getColor(), 16); //16 for hex //Check if using Long is necessary
+//            }
+            for (int i = 0; i < amountOfEntriesInDatabase; i++) {
+                chronometerNameArray[i] = hactivities.get(i).getHactivity();
+                chronometerColorArray[i] = (int) Long.parseLong(hactivities.get(i).getColor(), 16);
+            }
+
+            //TODO: This whole thing needs to be rewrited
+//            //Initializes button array
+//            int index = 0;
+//            int buttonIndex =0;
+//            k = 0;
+//            for (Hactivity current : hactivitiesListArray){
+//                if(current.isSelected()){
+//                    boolean equalFlag = false;
+//                    if(hactivities.get(k).getHactivity().equals(hactivitiesListArray.get(index).getHactivity())){
+//                        equalFlag = true;
+//                    } else {
+//                        for (int j = k;j < amountOfEntriesInDatabase; j++){
+//                            if(hactivities.get(j).getHactivity().equals(hactivitiesListArray.get(index).getHactivity())){
+//                                k = j;
+//                                break;
+//                            }
+//                        }
+//                    }
+//
+//                    Log.d("Hactivity name in buttonAdding: ", hactivities.get(k).getHactivity());
+//                    Log.d("Hactivity name in buttonAdding, listArray", hactivitiesListArray.get(index).getHactivity());
+//                    Log.d("Hactivity name with index k in chronometerNameArray", chronometerNameArray[k]);
+//                    //Add to database here if not already there. Or not here? Here.
+//                    buttonArray[buttonIndex].setText(chronometerNameArray[k]);
+//                    //buttonArray[i].setBackgroundResource(R.drawable.general_button);
+//                    Log.d("Index of index in buttonAdding: ", Integer.toString(index));
+//                    Log.d("Hactivity index k in buttonAdding: ", Integer.toString(k));
+//                    Log.d("Hactivity color in buttonAdding: ", current.getColor() + "  and colorarray color: " + Integer.toString(chronometerColorArray[k]) );
+//                    buttonArray[buttonIndex].setBackgroundColor(chronometerColorArray[k]);
+//                    //Now set the xml values dynamically, see general_button.xml TODO: Make this based on drawable
+//                    buttonArray[buttonIndex].setPadding(10,10,10,10);
+//                    chronometerIndexArray[buttonIndex] = k; //Maps pressings of the buttons to right hactivities
+//                    if(equalFlag == true){
+//                        k++;
+//                    }
+//                    buttonIndex++;
+//                }
+//                index++;
+//            }
+
+
+            //Initializes button array
+            int buttonIndex = 0;
+            k = 0;
+            for (Hactivity current : hactivitiesListArray){
+                if(current.isSelected()){
+                    for(k = 0; k < chronometerNameArray.length ; k++){
+                        if(current.getHactivity().equals(chronometerNameArray[k])){
+                            break;
+                        }
+                    }
+                    buttonArray[buttonIndex].setText(chronometerNameArray[k]);
+                    buttonArray[buttonIndex].setBackgroundColor(chronometerColorArray[k]);
+                    buttonArray[buttonIndex].setPadding(10,10,10,10);
+                    chronometerIndexArray[buttonIndex] = k; //Maps pressings of the buttons to right hactivities
+                    buttonIndex++;
+                }
+            }
+
+
+/*            for (int i = 0; i < chronometerNameArray.length; i++){
+                buttonArray[i].setText(chronometerNameArray[i]);
+                //buttonArray[i].setBackgroundResource(R.drawable.general_button);
+                buttonArray[i].setBackgroundColor(chronometerColorArray[i]);
+                //Now set the xml values dynamically, see general_button.xml TODO: Make this based on drawable
+                buttonArray[i].setPadding(10,10,10,10);
+
+                //buttonArray[i].setBackgroundResource(R.drawable.general_button); //Create a new drawable that corresponds newly set color
+            }*/
+        }
+
+
+
+        //Initialize hactivities TODO: Add dynamically defined hactivities. Change the in chronometer array!
         if(datasource.isContainsEntryForDay(dateNow)) {
-            List<Hactivity> hactivities = datasource.getHactivitiesInDay(dateNow);
+            List<Hactivity> hactivities = datasource.getHactivitiesInDay(dateNow); //Actually this needs to change
+            // List<Hactivity> hactivitiesTodaySelected = //Modify hactivities to match this somehow (for loop getselected)
             amountOfEntriesInDatabase = datasource.amountOfEntriesForDay(dateNow);
             chronometerArray = new Chronometer[amountOfEntriesInDatabase];
             Log.d("Amount of entries in the database", Integer.toString(amountOfEntriesInDatabase));
@@ -132,7 +266,7 @@ public class HabifierActivity extends Activity {
                 //Log.d("Updating chronometer time array with value: ", Integer.toString((int)hactivities.get(i).getTime()));
                 chronometerTimeArray[i] = hactivities.get(i).getTime();
                 // Now update the hactivitiesArray
-                if(hactivitiesArray.size() <  chronometerLength){
+                if(hactivitiesArray.size() <  chronometerTimeArray.length){
                     hactivitiesArray.add(hactivities.get(i));
                 } else {
                     hactivitiesArray.remove(i);
@@ -143,8 +277,8 @@ public class HabifierActivity extends Activity {
 
 
         } else {
-            Log.d("No previous hactivities found: Lenght of chronometer", Integer.toString(chronometerLength));
-            for (int i = 0; i < chronometerLength; i++){
+            Log.d("No previous hactivities found: Length of chronometer", Integer.toString(chronometerLength));
+            for (int i = 0; i < chronometerTimeArray.length; i++){
                 Log.d("Datasource is creating things", "index");
                 // First, let's update the pie graph
                 PieSlice slice = new PieSlice();
@@ -154,18 +288,13 @@ public class HabifierActivity extends Activity {
                 pieGraph.addSlice(slice);
 
                 //Make database entries for today
-                hactivitiesArray.add(datasource.createHactivity(chronometerNameArray[i]));
+                hactivitiesArray.add(datasource.createHactivity(chronometerNameArray[i], Integer.toHexString(chronometerColorArray[i])));
+                datasource.createHactivityDayBefore(chronometerNameArray[i], Integer.toHexString(chronometerColorArray[i]));
 
                 // Now, update the chronometer time array
                 chronometerTimeArray[i] = 0;
             }
         }
-        if(datasource.amountOfEntriesInTheDatabaseList() == 0){
-            //Add basic activities in the list
-            for (int i = 0; i < chronometerNameArray.length ; i++)
-                datasource.createHactivityList(chronometerNameArray[i]);
-        }
-
 
 
         //for (int i = 0; i < chronometerLength; i++){
@@ -184,6 +313,7 @@ public class HabifierActivity extends Activity {
         Arrays.asList(chronometerArray).indexOf("test");
 
 
+        //Pop-up menu stuff, probably does nothing
         try{
         buttonActivitySelector = (Button) findViewById(R.id.menuAddANewActivity);
         buttonActivitySelector.setOnClickListener(new OnClickListener() {
@@ -261,23 +391,44 @@ public class HabifierActivity extends Activity {
         int id = item.getItemId();
         if (id == R.id.action_settings) {
             return true;
-        } else if(id == R.id.menuAddANewActivity) {
+        } else if ( id == R.id.menuAddANewActivity ) {
+            if(lastChronometerIndex != -1){
+                resumeChronometerAction();
+                datasource.updateHactivity(chronometerNameArray[lastChronometerIndex], chronometerTimeArray[lastChronometerIndex], (int) hactivitiesArray.get(lastChronometerIndex).getId() );
+            }
             Intent intent = new Intent(this, Addhactivity.class);
-            startActivity(intent);
-
+            startActivityForResult(intent,1);
+            //startActivity(intent);
         }
         return super.onOptionsItemSelected(item);
     }
 
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if (requestCode == 1) {
+//            if(resultCode == RESULT_OK){
+//                String result=data.getStringExtra("result");
+//            }
+            if (resultCode == RESULT_CANCELED) {
+                //Write your code if there's no result
+                Intent intent = getIntent();
+                finish();
+                startActivity(intent);
+            }
+        }
+    }//onActivityResult
+
+
+
     public void resetButtonClicked(View view) {
-        for (int i = 0; i < chronometerLength; i++){
+        for (int i = 0; i < chronometerTimeArray.length; i++){
             Log.d("Checking chronometer time array with value: ", Integer.toString((int) pieGraph.getSlice(i).getGoalValue()));
         }
 
         String tagTemp = view.getTag().toString();
-        int buttonIndex =  Integer.parseInt(tagTemp.substring(0,1));
+        int buttonIndex =  chronometerIndexArray[Integer.parseInt(tagTemp.substring(0,1))];
         if(lastChronometerIndex == -1){
-            lastChronometerIndex = 0;
+            lastChronometerIndex = chronometerIndexArray[0];
             updateTimer();
         }
         if(!isChronometerRunning){
@@ -319,6 +470,15 @@ public class HabifierActivity extends Activity {
     public void updateTimer(){
         if (!chronometer1.isActivated())
         {
+//            if(mIntervalCount > mIntervalSave){
+//                mIntervalCount = 0;
+//                if(lastChronometerIndex != -1) {
+//                    datasource.updateHactivity(chronometerNameArray[lastChronometerIndex], chronometerTimeArray[lastChronometerIndex], (int) hactivitiesArray.get(lastChronometerIndex).getId() );
+//                }
+//
+//            }
+//            mIntervalCount++;
+
             long elapsedMillis = 0;
             if(stoppedTime > 0 ){
                 chronometer1.setBase(SystemClock.elapsedRealtime() - chronometerTimeArray[lastChronometerIndex]);
@@ -338,13 +498,14 @@ public class HabifierActivity extends Activity {
 
     public void graphButtonClicked(View view) {
         Log.d("Last Chronometer Index at graphButton clicked.", Integer.toString(lastChronometerIndex));
-        if(lastChronometerIndex >= 0){
+        if(datasource.amountOfEntriesForDay(new Date()) > 0){
             Intent intent = new Intent(this, GraphActivity.class);
             //updateChronometerTimeArray();
             datasource.updateHactivity(chronometerNameArray[lastChronometerIndex], chronometerTimeArray[lastChronometerIndex], (int) hactivitiesArray.get(lastChronometerIndex).getId() );
             intent.putExtra(CHRONOMETERARRAY_MESSAGE, chronometerTimeArray);
             Log.d("chronometerArrayLenght at habifieractivity", Integer.toString(chronometerNameArray.length));
             intent.putExtra(CHRONOMETERNAME_MESSAGE, chronometerNameArray);
+            intent.putExtra(CHRONOMETERCOLOR_MESSAGE, chronometerColorArray);
             startActivity(intent);
         } else {
             Context context = getApplicationContext();

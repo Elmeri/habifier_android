@@ -3,6 +3,7 @@ package com.elmeripoikolainen.habifier;
 import android.app.Activity;
 import android.app.ListActivity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
@@ -50,6 +51,7 @@ public class DefineHactivity extends Activity {
         cancelbutton = (Button) findViewById(R.id.defineHactivityCancel);
 
         colorbutton.setBackgroundColor(getResources().getColor(R.color.green));
+        mSelectedColorDash1 = getResources().getColor(R.color.green);
 
 
         datasource = new HactivityDataSource(this);
@@ -101,7 +103,7 @@ public class DefineHactivity extends Activity {
 
 
 
-        //Possibly breaks code (":D")
+        //Possibly breaks code (":D") //Does not seem to do anything...
         Toast.makeText(view.getContext(), "Click here",
                 Toast.LENGTH_SHORT).show();
     }
@@ -110,6 +112,8 @@ public class DefineHactivity extends Activity {
         Return to previous activity without saving.
      */
     public void onCancelButtonClicked(View view){
+       Intent returnIntent = new Intent();
+       setResult(RESULT_CANCELED, returnIntent);
        finish();
     }
 
@@ -117,6 +121,21 @@ public class DefineHactivity extends Activity {
         Return to previous activity with saving. Add new hactivity to hactivitydatabase.
      */
     public void onDoneButtonClicked(View view){
+        String hactivity_text = hactivity_name.getText().toString();
+        //Also check hactivity with that name exists
+        if (hactivity_text != ""){
+            //Update color value of hactivity
+            String hexColorValue =  Integer.toHexString(mSelectedColorDash1);
+            //Update the string
+            datasource.createHactivityList(hactivity_name.getText().toString(), hexColorValue, false); //false as it is not checked
+
+        } else {
+            Toast.makeText(view.getContext(), "Please name your activity",
+                    Toast.LENGTH_SHORT).show();
+        }
+
+        Intent returnIntent = new Intent();
+        setResult(RESULT_CANCELED, returnIntent);
         finish();
     }
 

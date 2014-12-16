@@ -8,9 +8,11 @@ import java.util.Date;
 public class Hactivity {
     private long id;
     private String activity;
+    private String color;
     private long time;
     private Date date;
     private boolean selected;
+
 
     public boolean isSelected() { return selected; }
 
@@ -52,6 +54,13 @@ public class Hactivity {
         this.activity = comment;
     }
 
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
 
     // Will be used by the ArrayAdapter in the ListView
     @Override

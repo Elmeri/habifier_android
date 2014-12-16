@@ -6,4 +6,11 @@
         android:icon="@drawable/ic_action_new"
         android:orderInCategory="100"
         android:showAsAction="ifRoom" />
+
+    <item android:id="@+id/menuAddHactivityFinished"
+        android:title="@string/action_settings"
+        android:icon="@drawable/ic_action_accept"
+        android:orderInCategory="100"
+        android:showAsAction="ifRoom" />
+
 </menu>

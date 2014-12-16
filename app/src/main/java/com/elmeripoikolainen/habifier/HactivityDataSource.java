@@ -29,7 +29,7 @@ public class HactivityDataSource {
 //            MySQLiteHelper.COLUMN_HACTIVITY, MySQLiteHelper.COLUMN_TIME};
 
     private String[] allColumns = { MySQLiteHelper.COLUMN_ID,
-            MySQLiteHelper.COLUMN_HACTIVITY, MySQLiteHelper.COLUMN_TIME, MySQLiteHelper.COLUMN_DATE};
+            MySQLiteHelper.COLUMN_HACTIVITY, MySQLiteHelper.COLUMN_TIME, MySQLiteHelper.COLUMN_DATE, MySQLiteHelper.COLUMN_COLOR};
 
     //For hactivities list
     private String[] allColumnsList = { MySQLiteHelper.COLUMN_ID,
@@ -67,11 +67,12 @@ public class HactivityDataSource {
     /*
         Creates a new hacktivity
      */
-    public Hactivity createHactivity(String hactivity) {
+    public Hactivity createHactivity(String hactivity, String color) {
         ContentValues values = new ContentValues();
         values.put(MySQLiteHelper.COLUMN_HACTIVITY, hactivity);
         String date_now = getDateTime();
         values.put(MySQLiteHelper.COLUMN_DATE, date_now);
+        values.put(MySQLiteHelper.COLUMN_COLOR, color);
         long insertId = database.insert(MySQLiteHelper.TABLE_HACTIVITIES, null,
                 values);
         Cursor cursor = database.query(MySQLiteHelper.TABLE_HACTIVITIES,
@@ -84,13 +85,14 @@ public class HactivityDataSource {
     }
 
     //TODO THIS FUNCTION IS UNIMPORTANT, MAY BE REMOVED
-    public Hactivity createHactivityDayBefore(String hactivity) {
+    public Hactivity createHactivityDayBefore(String hactivity, String color) {
         ContentValues values = new ContentValues();
         values.put(MySQLiteHelper.COLUMN_HACTIVITY, hactivity);
 
         String date_now = getDateTimeCorrupted();
         values.put(MySQLiteHelper.COLUMN_DATE, date_now);
         values.put(MySQLiteHelper.COLUMN_TIME, 1000 * 60 * 60 * 1.5);
+        values.put(MySQLiteHelper.COLUMN_COLOR, color);
         long insertId = database.insert(MySQLiteHelper.TABLE_HACTIVITIES, null,
                 values);
         Cursor cursor = database.query(MySQLiteHelper.TABLE_HACTIVITIES,
@@ -108,6 +110,24 @@ public class HactivityDataSource {
         System.out.println("Hactivity deleted with id: " + id);
         database.delete(MySQLiteHelper.TABLE_HACTIVITIES, MySQLiteHelper.COLUMN_ID
                 + " = " + id, null);
+    }
+
+    public void deleteHactivitiesToday(Hactivity hactivity, Date date) {
+        long id = hactivity.getId();
+        String fieldValue = hactivity.getHactivity();
+        Log.d("Date before formatting: ", date.toString());
+        String dateFormatted = dateFormatShort.format(date);
+        Log.d("Date formatted to short form: ", dateFormatted);
+        String TableName = MySQLiteHelper.TABLE_HACTIVITIES;
+        String dbfield = MySQLiteHelper.COLUMN_DATE;
+//        String Query = "Select * from " + TableName + " where " + dbfield + " LIKE '%"
+//                + date +"%' AND "+ MySQLiteHelper.COLUMN_HACTIVITY + " = '" + fieldValue +"'";
+//        System.out.println("Hactivity deleted with id: " + id);
+        int i = database.delete(MySQLiteHelper.TABLE_HACTIVITIES, dbfield
+                + " LIKE '%"
+                + dateFormatted +"%' AND "+ MySQLiteHelper.COLUMN_HACTIVITY + " = '" + fieldValue +"'", null);
+
+        Log.d("Amount of entries deleted database after deletion : ", Integer.toString(i));
     }
 
     /*
@@ -162,6 +182,7 @@ public class HactivityDataSource {
         hactivity.setId(cursor.getLong(0));
         hactivity.setHactivity(cursor.getString(1));
         hactivity.setTime(cursor.getInt(2));
+        hactivity.setColor(cursor.getString(4));
 
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.sss");
         Date date = new Date();
@@ -171,7 +192,6 @@ public class HactivityDataSource {
         } catch (java.text.ParseException ex){
             Log.d("Parse failed", ex.getMessage());
         }
-
         hactivity.setDate(date);
         return hactivity;
     }
@@ -214,7 +234,7 @@ public class HactivityDataSource {
 
     private String getDateTimeCorrupted() {
         DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-        Date date = new Date(new Date().getTime() - 24 * 60 * 60 * 1000L);
+        Date date = new Date(new Date().getTime() - 2 * 24 * 60 * 60 * 1000L);
         String reportDate = dateFormat.format(date);
         Log.d("Date created at beginning", reportDate);
         return dateFormat.format(date);
@@ -236,6 +256,22 @@ public class HactivityDataSource {
         String dateFormatted = dateFormatShort.format(date);
         return amountOfEntriesinTheDatabase(MySQLiteHelper.TABLE_HACTIVITIES, MySQLiteHelper.COLUMN_DATE, dateFormatted);
     }
+
+
+    public boolean isHactivityInDatabase(Hactivity hactivity, Date date){
+        String TableName = MySQLiteHelper.TABLE_HACTIVITIES;
+        String dbfield = MySQLiteHelper.COLUMN_DATE;
+        String fieldValue = hactivity.getHactivity();
+        String dateFormatted = dateFormatShort.format(date);
+        String Query = "Select * from " + TableName + " where " + dbfield + " LIKE '%"
+                + dateFormatted +"%' AND "+ MySQLiteHelper.COLUMN_HACTIVITY + " = '" + fieldValue +"'";
+        Cursor cursor = database.rawQuery(Query, null);
+        if(cursor.getCount()<=0){
+            return false;
+        }
+        return true;
+    }
+
 
     /*
         Check if the data is in the database.
@@ -298,11 +334,12 @@ public class HactivityDataSource {
         Creates a new hactivity in the list that keeps track of all hactivities.
      */
 
-    public Hactivity createHactivityList(String hactivity) {
+    public Hactivity createHactivityList(String hactivity, String color, boolean checked) {
         ContentValues values = new ContentValues();
+        int checkedInt = (checked) ? 1 : 0;
         values.put(MySQLiteHelper.COLUMN_HACTIVITY, hactivity);
-        values.put(MySQLiteHelper.COLUMN_CHECKED, false);
-        values.put(MySQLiteHelper.COLUMN_COLOR, "blabla");
+        values.put(MySQLiteHelper.COLUMN_CHECKED, checkedInt);
+        values.put(MySQLiteHelper.COLUMN_COLOR, color);
         long insertId = database.insert(MySQLiteHelper.TABLE_HACTIVITIES_LIST, null,
                 values);
         Log.d("Insert id result ", Integer.toString((int)insertId)); //RETURNS FALSE
@@ -333,8 +370,19 @@ public class HactivityDataSource {
         Hactivity hactivity = new Hactivity();
         hactivity.setId(cursor.getLong(0));
         hactivity.setHactivity(cursor.getString(1));
-        hactivity.setSelected(cursor.getInt(3));
+        Boolean checked = (cursor.getInt(3) == 0) ? false : true;
+        hactivity.setSelected(checked);
+        hactivity.setColor(cursor.getString(2));
         return hactivity;
+    }
+
+    public void updateHactivityList(String hactivity, Boolean checked, int id) {
+        //boolean isHactivityInDatabase = checkEvent(hactivity);
+        ContentValues values = new ContentValues();
+        int checkedInt = (checked) ? 1 : 0;
+        values.put(MySQLiteHelper.COLUMN_CHECKED, checkedInt);
+        Log.d("UpdateHactivityList hactivity: ", hactivity +" checked: " + Boolean.toString(checked) + " id: " + Integer.toString(id));
+        database.update(MySQLiteHelper.TABLE_HACTIVITIES_LIST, values , MySQLiteHelper.COLUMN_ID + " = " + id + " ", null);
     }
 
 

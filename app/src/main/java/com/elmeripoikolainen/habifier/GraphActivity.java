@@ -76,6 +76,7 @@ public class GraphActivity extends FragmentActivity implements
     //For modifying the graphs
     private static long[] chronometerTimeArray;
     private static String[] chronometerNameArray;
+    private static int[] chronometerColorArray;
     private static Date graphMinDate;
     private static Date chosenDate = new Date();
 
@@ -139,10 +140,10 @@ public class GraphActivity extends FragmentActivity implements
         Bundle extras = intent.getExtras();
         chronometerTimeArray = extras.getLongArray(HabifierActivity.CHRONOMETERARRAY_MESSAGE);
         chronometerNameArray = extras.getStringArray(HabifierActivity.CHRONOMETERNAME_MESSAGE);
+        chronometerColorArray = extras.getIntArray(HabifierActivity.CHRONOMETERCOLOR_MESSAGE);
 
         //Log.d("chronometerTimeArrayLength",  Integer.toString(chronometerTimeArray.length));
         //Log.d("chronometerArrayLenght", Integer.toString(chronometerNameArray.length));
-
 
 
         datasource = new HactivityDataSource(this);
@@ -200,45 +201,70 @@ public class GraphActivity extends FragmentActivity implements
         return super.onOptionsItemSelected(item);
     }
 
+    //TODO: Change this to more dynamic
+    //TODO: No longer crashes if this is dynamic
     public void changeValues(Date day_selected, int choice){
 
         List<Hactivity> hactivities  = datasource.getAllHactivities();
-        Log.d("Number of hactivities", Integer.toString(hactivities.size()));
-        if(DateUtils.isToday((new Date()).getTime())){
-            Log.d("Dateutils success", "is today");
+
+        List<Hactivity> hactivitiesInDay = datasource.getHactivitiesInDay(day_selected);
+
+        Log.d("Hactivities in day length =",  Integer.toString(hactivitiesInDay.size()));
+
+        //Dynamically updated chronometer array
+        chronometerTimeArray = new long[hactivitiesInDay.size()];
+        chronometerColorArray = new int[hactivitiesInDay.size()];
+        chronometerNameArray = new String[hactivitiesInDay.size()];
+
+        int toastFlag = 1;
+        for (int i = 0; i < hactivitiesInDay.size(); i++){
+            Hactivity hactivity = hactivitiesInDay.get(i);
+            chronometerNameArray[i] = hactivity.getHactivity();
+            chronometerTimeArray[i] = hactivity.getTime();
+            chronometerColorArray[i] = (int) Long.parseLong(hactivity.getColor(), 16);  //change to hex string
+            toastFlag = 0;
         }
-        DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-        String reportDate = df.format(new Date());
-        Log.d("Item date, Date()", reportDate);
-        String chosenDateofChangeValues = df.format((day_selected));
+
+        //
+
+
+//        Log.d("Number of hactivities", Integer.toString(hactivities.size()));
+//        if(DateUtils.isToday((new Date()).getTime())){
+//            Log.d("Dateutils success", "is today");
+//        }
+//        DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+//        String reportDate = df.format(new Date());
+//        Log.d("Item date, Date()", reportDate);
+//        String chosenDateofChangeValues = df.format((day_selected));
+
 
 
         //Change this to fetch only the selected day of hactivities
 
-        int toastFlag = 1;
-        for (Hactivity item : hactivities) {
-            int index = Arrays.asList(chronometerNameArray).indexOf(item.getHactivity());
-            reportDate = df.format(item.getDate());
-            //Log.d("Item date", reportDate);
-            //Log.d("Itemdate in time", Long.toString(item.getDate().getTime()/day_in_long));
-            if ( DateUtils.isToday( item.getDate().getTime()) && DateUtils.isToday(day_selected.getTime() ) && choice == 1 ) {
-                Log.d("Item number, today",  Integer.toString((int) item.getId()) );
-                chronometerTimeArray[index] = item.getTime();
-                toastFlag = 0;
-            } else if (DateUtils.isToday(item.getDate().getTime() +  day_in_long) && DateUtils.isToday(day_selected.getTime()  +  day_in_long) && choice == 2 ){
-                Log.d("Item number, yesterday",  Integer.toString((int) item.getId()) );
-                chronometerTimeArray[index] = item.getTime();
-                toastFlag = 0;
-            } //else if (item.getDate().equals(chosenDate) && choice == 3){ // BUG IN EQUALS :-ooooo
-            //else if (item.getDate().getTime()/day_in_long == chosenDate.getTime()/day_in_long && choice == 3){
-            else if (isSameDay(item.getDate(), chosenDate) && choice == 3){
-                Log.d("Item number, chosen Date",  Integer.toString((int) item.getId()) );
-                chronometerTimeArray[index] = item.getTime();
-                Log.d("Item number, getTime value", Integer.toString((int) item.getTime() ));
-                toastFlag = 0;
-            }
 
-        }
+//        for (Hactivity item : hactivities) {
+//            int index = Arrays.asList(chronometerNameArray).indexOf(item.getHactivity());
+//            reportDate = df.format(item.getDate());
+//            //Log.d("Item date", reportDate);
+//            //Log.d("Itemdate in time", Long.toString(item.getDate().getTime()/day_in_long));
+//            if ( DateUtils.isToday( item.getDate().getTime()) && DateUtils.isToday(day_selected.getTime() ) && choice == 1 ) {
+//                Log.d("Item number, today",  Integer.toString((int) item.getId()) );
+//                chronometerTimeArray[index] = item.getTime();
+//                toastFlag = 0;
+//            } else if (DateUtils.isToday(item.getDate().getTime() +  day_in_long) && DateUtils.isToday(day_selected.getTime()  +  day_in_long) && choice == 2 ){
+//                Log.d("Item number, yesterday",  Integer.toString((int) item.getId()) );
+//                chronometerTimeArray[index] = item.getTime();
+//                toastFlag = 0;
+//            } //else if (item.getDate().equals(chosenDate) && choice == 3){ // BUG IN EQUALS :-ooooo
+//            //else if (item.getDate().getTime()/day_in_long == chosenDate.getTime()/day_in_long && choice == 3){
+//            else if (isSameDay(item.getDate(), chosenDate) && choice == 3){
+//                Log.d("Item number, chosen Date",  Integer.toString((int) item.getId()) );
+//                chronometerTimeArray[index] = item.getTime();
+//                Log.d("Item number, getTime value", Integer.toString((int) item.getTime() ));
+//                toastFlag = 0;
+//            }
+//
+//        }
 
         if (toastFlag == 1){
             Context context = getApplicationContext();
@@ -247,6 +273,7 @@ public class GraphActivity extends FragmentActivity implements
 
             Toast toast = Toast.makeText(context, text, duration);
             toast.show();
+            return;
         }
 
             //if( day == today ){
@@ -283,22 +310,19 @@ public class GraphActivity extends FragmentActivity implements
 
     public void changeGraphValues(){
         PieGraph pieGraph = (PieGraph) findViewById(R.id.graph);
-        PieSlice slice = pieGraph.getSlice(0);
-        slice.setGoalValue(chronometerTimeArray[0]);
 
-        slice = pieGraph.getSlice(1);
-        slice.setGoalValue(chronometerTimeArray[1]);
+        pieGraph.removeSlices();
 
-        slice = pieGraph.getSlice(2);
-        slice.setGoalValue(chronometerTimeArray[2]);
-
-        slice = pieGraph.getSlice(3);
-        slice.setGoalValue(chronometerTimeArray[3]);
-
+        for(int i = 0; i < chronometerTimeArray.length ; i++){
+            PieSlice slice = new PieSlice();
+            slice.setGoalValue(chronometerTimeArray[i]);
+            slice.setColor(chronometerColorArray[i]);
+            pieGraph.addSlice(slice);
+        }
         pieGraph.setDuration(1000);
         pieGraph.setInterpolator(new AccelerateDecelerateInterpolator());
         pieGraph.animateToGoalValues();
-        // TODO: changing values does not run smoothly, is it possible to fix by removing some of the below features?
+        // TODO: changing values does not run smoothly
 
 
 
@@ -314,7 +338,16 @@ public class GraphActivity extends FragmentActivity implements
         }
 
         ArrayList<Bar> points = new ArrayList<Bar>();
-        Bar d = new Bar();
+
+        for (int i = 0; i < chronometerTimeArray.length ; i++){
+            Bar d = new Bar();
+            d.setColor(chronometerColorArray[i]);
+            d.setName(chronometerNameArray[i]);
+            d = formatBar(d, i, timeFormat);
+            points.add(d);
+        }
+
+/*        Bar d = new Bar();
         d.setColor(Color.parseColor("#99CC00"));
         d.setName("Work");
         d = formatBar(d,0,timeFormat);
@@ -334,16 +367,16 @@ public class GraphActivity extends FragmentActivity implements
         d4.setName("Eating");
         d4 = formatBar(d4,3,timeFormat);
 
-/*            Bar d5 = new Bar();
+*//*            Bar d5 = new Bar();
             d5.setColor(Color.parseColor("#AA66CC"));
             d5.setName("Bother");
             d5.setGoalValue(10);
-            d5.setValueSuffix(" s");*/
+            d5.setValueSuffix(" s");*//*
         points.add(d);
         points.add(d2);
         points.add(d3);
         points.add(d4);
-        //points.add(d5);
+        //points.add(d5);*/
 
 
         g.setBars(points);
@@ -542,8 +575,16 @@ public class GraphActivity extends FragmentActivity implements
 
 
         public void setValues(){
-            PieSlice slice = new PieSlice();
-            slice.setColor(Color.parseColor("#99CC00"));
+            for(int i = 0; i < chronometerTimeArray.length; i++){
+                PieSlice slice = new PieSlice();
+                slice.setColor(chronometerColorArray[i]);
+                slice.setGoalValue(chronometerTimeArray[i]);
+                pieGraph.addSlice(slice);
+            }
+
+
+            //PieSlice slice = new PieSlice();
+/*            slice.setColor(Color.parseColor("#99CC00"));
             slice.setGoalValue(chronometerTimeArray[0]);
             pieGraph.addSlice(slice);
             slice = new PieSlice();
@@ -557,7 +598,8 @@ public class GraphActivity extends FragmentActivity implements
             slice = new PieSlice();
             slice.setColor((getResources().getColor(R.color.blue)));
             slice.setGoalValue(chronometerTimeArray[3]);
-            pieGraph.addSlice(slice);
+            pieGraph.addSlice(slice);*/
+
             pieGraph.setInnerCircleRatio(200);
             pieGraph.setPadding(3);
 
@@ -664,8 +706,18 @@ public class GraphActivity extends FragmentActivity implements
                 }
             }
 
+
+
             ArrayList<Bar> points = new ArrayList<Bar>();
-            Bar d = new Bar();
+            for (int i = 0; i < chronometerTimeArray.length ; i++){
+                Bar d = new Bar();
+                d.setColor(chronometerColorArray[i]);
+                d.setName(chronometerNameArray[i]);
+                d = formatBar(d, i, timeFormat);
+                points.add(d);
+            }
+
+          /*  Bar d = new Bar();
             d.setColor(Color.parseColor("#99CC00"));
             d.setName("Work");
             d = formatBar(d,0,timeFormat);
@@ -685,16 +737,16 @@ public class GraphActivity extends FragmentActivity implements
             d4.setName("Eating");
             d4 = formatBar(d4,3,timeFormat);
 
-/*            Bar d5 = new Bar();
+*//*            Bar d5 = new Bar();
             d5.setColor(Color.parseColor("#AA66CC"));
             d5.setName("Bother");
             d5.setGoalValue(10);
-            d5.setValueSuffix(" s");*/
+            d5.setValueSuffix(" s");*//*
             points.add(d);
             points.add(d2);
             points.add(d3);
             points.add(d4);
-            //points.add(d5);
+            //points.add(d5);*/
 
 
             g.setBars(points);
