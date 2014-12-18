@@ -40,6 +40,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:onClick="resetButtonClicked"
+                android:layout_marginTop="3dp"
                 android:tag="@string/button_2"
                 android:text="@string/study_button"
                 android:background="@drawable/yellow_button"></Button>
@@ -50,6 +51,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:onClick="resetButtonClicked"
+                android:layout_marginTop="3dp"
                 android:tag="@string/button_3"
                 android:text="@string/leisure_button"
                 android:background="@drawable/violet_button"></Button>
@@ -60,6 +62,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:onClick="resetButtonClicked"
+                android:layout_marginTop="3dp"
                 android:tag="@string/button_4"
                 android:text="@string/eating_button"
                 android:background="@drawable/blue_button"></Button>
@@ -69,8 +72,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:onClick="pauseButtonClicked"
+                android:layout_marginTop="3dp"
                 android:text="Pause"
-                android:visibility="invisible"/>
+                android:visibility="invisible"
+                android:background="@drawable/graph_button"></Button>/>
 
 
 
@@ -95,7 +100,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:onClick="graphButtonClicked"
-                android:text="Graphs" />
+                android:layout_marginTop="3dp"
+                android:text="Graphs"
+                android:background="@drawable/graph_button"></Button>/>
 
         </LinearLayout>
 

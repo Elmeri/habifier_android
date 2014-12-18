@@ -8,6 +8,7 @@
     <color name="yellow01">#EEAA22</color>
     <color name="violet">#AA66CC</color>
     <color name="violet01">#9955BB</color>
-    <color name="grey05">#a3a3a3</color>
     <color name="white">#FFFFFF</color>
+    <color name="grey05">#dddddd</color>
+    <color name="grey06">#cccccc</color>
 </resources>

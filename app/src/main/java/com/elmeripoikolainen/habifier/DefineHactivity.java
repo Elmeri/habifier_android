@@ -43,6 +43,7 @@ public class DefineHactivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_define_hactivity);
+        setTitle("New Activity");
 
         context = this.getApplicationContext();
 

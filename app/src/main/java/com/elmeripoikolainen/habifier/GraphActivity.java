@@ -98,6 +98,7 @@ public class GraphActivity extends FragmentActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_graph_activity);
+        setTitle("Graphs");
 
         // Set up the action bar.
         final ActionBar actionBar = getActionBar();
@@ -530,7 +531,7 @@ public class GraphActivity extends FragmentActivity implements
             Locale l = Locale.getDefault();
             switch (position) {
                 case 0:
-                    return "Donut Graph".toUpperCase(l);
+                    return "Pie Graph".toUpperCase(l);
                 case 1:
                     return "Bar Graph".toUpperCase(l);
                 case 2:
@@ -563,8 +564,8 @@ public class GraphActivity extends FragmentActivity implements
                     R.layout.fragment_graph_activity_pie_graph, container, false);
             TextView dummyTextView = (TextView) rootView
                     .findViewById(R.id.section_label);
-            dummyTextView.setText(Integer.toString(getArguments().getInt(
-                    ARG_SECTION_NUMBER)));
+//            dummyTextView.setText(Integer.toString(getArguments().getInt(
+//                    ARG_SECTION_NUMBER)));
 
             pieGraph = (PieGraph) rootView.findViewById(R.id.graph);
 
@@ -600,7 +601,7 @@ public class GraphActivity extends FragmentActivity implements
             slice.setGoalValue(chronometerTimeArray[3]);
             pieGraph.addSlice(slice);*/
 
-            pieGraph.setInnerCircleRatio(200);
+            //pieGraph.setInnerCircleRatio(200);
             pieGraph.setPadding(3);
 
 //            for (PieSlice s : pieGraph.getSlices())
@@ -686,8 +687,8 @@ public class GraphActivity extends FragmentActivity implements
                     R.layout.fragment_graph_activity_bar_graph, container, false);
             TextView dummyTextView = (TextView) rootView
                     .findViewById(R.id.section_label);
-            dummyTextView.setText(Integer.toString(getArguments().getInt(
-                    ARG_SECTION_NUMBER)));
+//            dummyTextView.setText(Integer.toString(getArguments().getInt(
+//                    ARG_SECTION_NUMBER)));
             g = (BarGraph)rootView.findViewById(R.id.graphBar);
             setValues();
 

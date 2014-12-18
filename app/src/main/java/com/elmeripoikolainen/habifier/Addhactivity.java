@@ -44,6 +44,7 @@ public class Addhactivity extends Activity implements AdapterView.OnItemClickLis
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_addhactivity);
+        setTitle("Manage activities");
 
         //Init datasource
         datasource = new HactivityDataSource(this);
@@ -71,7 +72,6 @@ public class Addhactivity extends Activity implements AdapterView.OnItemClickLis
                 hactivity_positon = pos;
                 registerForContextMenu(lv);
                 openContextMenu(lv);
-                Log.d("long clicked", "pos: " + pos);
 
                 return true;
             }
